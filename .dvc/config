@@ -1,0 +1,9 @@
+[core]
+    remote = dagshub
+['remote "dagshub"']
+    url = s3://dvc
+    endpointurl = https://dagshub.com/quamrl-hoda/zomato-delivery-time-prediction-system.s3
+    jobs = 1
+['remote "origin"']
+    url = s3://dvc
+    endpointurl = https://dagshub.com/quamrl-hoda/zomato-delivery-time-prediction.s3

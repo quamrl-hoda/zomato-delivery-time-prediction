@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ZomatoML · Delivery Time Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ NAVBAR -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="showPage('home')">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">Zomato<span class="logo-accent">ML</span></span>
+    </div>
+    <div class="nav-links">
+      <button class="nav-btn active" id="nav-home"     onclick="showPage('home')">Home</button>
+      <button class="nav-btn"        id="nav-predict"  onclick="showPage('predict')">Predict</button>
+      <button class="nav-btn"        id="nav-pipeline" onclick="showPage('pipeline')">Pipeline</button>
+      <button class="nav-btn"        id="nav-history"  onclick="showPage('history')">History</button>
+    </div>
+    <button class="nav-reset" onclick="resetAll()" title="Reset everything">↺ Reset</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════ PAGE: HOME -->
+<div class="page active" id="page-home">
+  <div class="home-hero">
+    <div class="hero-badge"><span class="hb-dot"></span>Stacking Regressor · Live</div>
+    <h1 class="hero-title">Delivery Time<br/><span class="hero-accent">Prediction</span></h1>
+    <p class="hero-sub">End-to-end ML pipeline predicting food delivery durations using LightGBM, Random Forest, Decision Trees, and Linear Regression in a stacking ensemble.</p>
+    <div class="hero-actions">
+      <button class="cta-primary" onclick="showPage('predict')">Start Predicting →</button>
+      <button class="cta-secondary" onclick="showPage('pipeline')">View Pipeline</button>
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-strip">
+    <div class="scard">
+      <div class="scard-icon">🧠</div>
+      <div class="scard-val">Stacking</div>
+      <div class="scard-lbl">Ensemble Type</div>
+    </div>
+    <div class="scard">
+      <div class="scard-icon">📊</div>
+      <div class="scard-val">15</div>
+      <div class="scard-lbl">Input Features</div>
+    </div>
+    <div class="scard">
+      <div class="scard-icon">⚙️</div>
+      <div class="scard-val">4</div>
+      <div class="scard-lbl">Base Models</div>
+    </div>
+    <div class="scard">
+      <div class="scard-icon">🎯</div>
+      <div class="scard-val">time_taken</div>
+      <div class="scard-lbl">Target Variable</div>
+    </div>
+    <div class="scard">
+      <div class="scard-icon">🔄</div>
+      <div class="scard-val">PowerTransform</div>
+      <div class="scard-lbl">Target Transform</div>
+    </div>
+  </div>
+
+  <!-- Feature type breakdown -->
+  <div class="feature-overview">
+    <h2 class="section-title">Feature Schema</h2>
+    <div class="ftype-grid">
+      <div class="ftype-card ftype-num">
+        <div class="ftype-label">Numerical <span class="ftype-badge">MinMaxScaler</span></div>
+        <div class="ftype-tags">
+          <span>age</span><span>ratings</span><span>pickup_time_minutes</span><span>distance</span>
+        </div>
+      </div>
+      <div class="ftype-card ftype-cat">
+        <div class="ftype-label">Nominal <span class="ftype-badge">OneHotEncoder</span></div>
+        <div class="ftype-tags">
+          <span>weather</span><span>type_of_order</span><span>type_of_vehicle</span>
+          <span>festival</span><span>city_type</span><span>is_weekend</span><span>order_time_of_day</span>
+        </div>
+      </div>
+      <div class="ftype-card ftype-ord">
+        <div class="ftype-label">Ordinal <span class="ftype-badge">OrdinalEncoder</span></div>
+        <div class="ftype-tags">
+          <span>traffic ↑</span><span>distance_type ↑</span>
+        </div>
+      </div>
+      <div class="ftype-card ftype-pass">
+        <div class="ftype-label">Passthrough <span class="ftype-badge">remainder</span></div>
+        <div class="ftype-tags">
+          <span>vehicle_condition</span><span>multiple_deliveries</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ PAGE: PREDICT -->
+<div class="page" id="page-predict">
+  <div class="page-header">
+    <h2 class="page-title">Make a Prediction</h2>
+    <p class="page-desc">Fill in all 15 features and get an estimated delivery time.</p>
+  </div>
+
+  <div class="predict-grid">
+
+    <!-- Form card -->
+    <div class="pcard">
+
+      <div class="pcard-section-head">
+        <span class="section-dot dot-green"></span>
+        Numerical Features
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Age</label><input type="number" id="age" placeholder="e.g. 29" min="18" max="60"/></div>
+        <div class="field"><label>Ratings</label><input type="number" id="ratings" placeholder="e.g. 4.5" step="0.1" min="1" max="5"/></div>
+        <div class="field"><label>Pickup Time (min)</label><input type="number" id="pickup_time_minutes" placeholder="e.g. 10" min="0"/></div>
+        <div class="field"><label>Distance (km)</label><input type="number" id="distance" placeholder="e.g. 5.2" step="0.1" min="0"/></div>
+        <div class="field"><label>Vehicle Condition</label><input type="number" id="vehicle_condition" placeholder="0 – 3" min="0" max="3"/></div>
+        <div class="field"><label>Multiple Deliveries</label><input type="number" id="multiple_deliveries" placeholder="0 – 3" min="0" max="3"/></div>
+      </div>
+
+      <div class="pcard-divider"></div>
+
+      <div class="pcard-section-head">
+        <span class="section-dot dot-orange"></span>
+        Categorical Features
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Weather</label>
+          <select id="weather"><option value="">Select…</option>
+            <option>Sunny</option><option>Cloudy</option><option>Windy</option>
+            <option>Fog</option><option>Stormy</option><option>Sandstorms</option>
+          </select></div>
+        <div class="field"><label>Type of Order</label>
+          <select id="type_of_order"><option value="">Select…</option>
+            <option>Snack</option><option>Meal</option><option>Drinks</option><option>Buffet</option>
+          </select></div>
+        <div class="field"><label>Type of Vehicle</label>
+          <select id="type_of_vehicle"><option value="">Select…</option>
+            <option>motorcycle</option><option>scooter</option>
+            <option>electric_scooter</option><option>bicycle</option>
+          </select></div>
+        <div class="field"><label>Festival</label>
+          <select id="festival"><option value="">Select…</option>
+            <option>Yes</option><option>No</option>
+          </select></div>
+        <div class="field"><label>City Type</label>
+          <select id="city_type"><option value="">Select…</option>
+            <option>Urban</option><option>Semi-Urban</option><option>Metropolitian</option>
+          </select></div>
+        <div class="field"><label>Is Weekend</label>
+          <select id="is_weekend"><option value="">Select…</option>
+            <option>Yes</option><option>No</option>
+          </select></div>
+        <div class="field full"><label>Order Time of Day</label>
+          <select id="order_time_of_day"><option value="">Select…</option>
+            <option>Morning</option><option>Afternoon</option>
+            <option>Evening</option><option>Night</option><option>Late Night</option>
+          </select></div>
+      </div>
+
+      <div class="pcard-divider"></div>
+
+      <div class="pcard-section-head">
+        <span class="section-dot dot-purple"></span>
+        Ordinal Features
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Traffic</label>
+          <select id="traffic"><option value="">Select…</option>
+            <option value="low">Low</option><option value="medium">Medium</option>
+            <option value="high">High</option><option value="jam">Jam</option>
+          </select></div>
+        <div class="field"><label>Distance Type</label>
+          <select id="distance_type"><option value="">Select…</option>
+            <option value="short">Short</option><option value="medium">Medium</option>
+            <option value="long">Long</option><option value="very_long">Very Long</option>
+          </select></div>
+      </div>
+
+      <div class="pcard-divider"></div>
+
+      <div class="form-actions">
+        <button class="btn-predict" id="pred-btn" onclick="singlePredict()">
+          <span class="spin" id="pred-spin"></span>
+          <span class="btn-txt">🚀 Predict Delivery Time</span>
+        </button>
+        <button class="btn-reset-form" onclick="resetForm()">↺ Reset Form</button>
+      </div>
+
+      <div class="form-err" id="form-err"></div>
+    </div>
+
+    <!-- Result card -->
+    <div class="pcard result-card" id="result-card">
+
+      <!-- Idle -->
+      <div class="result-idle" id="result-idle">
+        <div class="idle-rings">
+          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+          <span class="idle-icon">📦</span>
+        </div>
+        <p class="idle-title">Ready to Predict</p>
+        <p class="idle-sub">Complete the form and click predict to see the estimated delivery time.</p>
+      </div>
+
+      <!-- Active result -->
+      <div class="result-active" id="result-active" style="display:none">
+        <div class="result-top">
+          <p class="res-eyebrow">PREDICTED · TIME_TAKEN</p>
+          <div class="res-number" id="r-val">—</div>
+          <p class="res-unit">minutes estimated delivery time</p>
+          <div class="res-bar"><div class="res-bar-fill" id="r-bar"></div></div>
+        </div>
+
+        <div class="res-meta" id="res-meta"></div>
+
+        <div class="res-actions">
+          <button class="btn-again" onclick="predictAgain()">↻ Predict Again</button>
+          <button class="btn-history" onclick="showPage('history')">View History →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ PAGE: PIPELINE -->
+<div class="page" id="page-pipeline">
+  <div class="page-header">
+    <h2 class="page-title">Model Pipeline</h2>
+    <p class="page-desc">End-to-end ML pipeline from raw features to predicted delivery time.</p>
+  </div>
+
+  <div class="pipeline-container">
+
+    <!-- Step 1 -->
+    <div class="pipe-step" style="--delay:.05s">
+      <div class="pipe-num">01</div>
+      <div class="pipe-body">
+        <div class="pipe-title">Raw Input Data</div>
+        <div class="pipe-desc">15 features collected at order time — numerical, categorical (nominal + ordinal), and passthrough fields.</div>
+        <div class="pipe-tags">
+          <span class="ptag ptag-green">4 numerical</span>
+          <span class="ptag ptag-orange">7 nominal</span>
+          <span class="ptag ptag-purple">2 ordinal</span>
+          <span class="ptag ptag-gray">2 passthrough</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pipe-arrow">↓</div>
+
+    <!-- Step 2 -->
+    <div class="pipe-step" style="--delay:.15s">
+      <div class="pipe-num">02</div>
+      <div class="pipe-body">
+        <div class="pipe-title">ColumnTransformer — Preprocessor</div>
+        <div class="pipe-desc">Three parallel transformers applied simultaneously, with remainder cols passed through unchanged.</div>
+        <div class="pipe-parallel">
+          <div class="parallel-box pb-green">
+            <div class="pb-head">MinMaxScaler</div>
+            <div class="pb-cols">age · ratings · pickup_time_minutes · distance</div>
+          </div>
+          <div class="parallel-box pb-orange">
+            <div class="pb-head">OneHotEncoder</div>
+            <div class="pb-cols">weather · type_of_order · type_of_vehicle · festival · city_type · is_weekend · order_time_of_day</div>
+            <div class="pb-note">drop="first" · handle_unknown="ignore"</div>
+          </div>
+          <div class="parallel-box pb-purple">
+            <div class="pb-head">OrdinalEncoder</div>
+            <div class="pb-cols">traffic [low→jam] · distance_type [short→very_long]</div>
+            <div class="pb-note">unknown_value=−1 · missing=−999</div>
+          </div>
+          <div class="parallel-box pb-gray">
+            <div class="pb-head">Passthrough</div>
+            <div class="pb-cols">vehicle_condition · multiple_deliveries</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pipe-arrow">↓</div>
+
+    <!-- Step 3 -->
+    <div class="pipe-step" style="--delay:.25s">
+      <div class="pipe-num">03</div>
+      <div class="pipe-body">
+        <div class="pipe-title">Target Encoding — PowerTransformer</div>
+        <div class="pipe-desc">Applied to <code>time_taken</code> (target only) during training to normalise the skewed distribution. At inference, predictions are inverse-transformed back to original minutes scale.</div>
+        <div class="pipe-tags">
+          <span class="ptag ptag-blue">Fitted on y_train</span>
+          <span class="ptag ptag-gray">inverse_transform at inference</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pipe-arrow">↓</div>
+
+    <!-- Step 4 -->
+    <div class="pipe-step" style="--delay:.35s">
+      <div class="pipe-num">04</div>
+      <div class="pipe-body">
+        <div class="pipe-title">StackingRegressor — Ensemble</div>
+        <div class="pipe-desc">Four base estimators trained in cross-validation folds. Their out-of-fold predictions are used as meta-features for a final linear meta-learner.</div>
+        <div class="pipe-parallel">
+          <div class="parallel-box pb-blue">
+            <div class="pb-head">LightGBM</div>
+            <div class="pb-cols">Gradient boosted trees · fast · handles categoricals</div>
+          </div>
+          <div class="parallel-box pb-blue">
+            <div class="pb-head">Random Forest</div>
+            <div class="pb-cols">Bagged decision trees · low variance</div>
+          </div>
+          <div class="parallel-box pb-blue">
+            <div class="pb-head">Decision Tree</div>
+            <div class="pb-cols">Single tree · interpretable base learner</div>
+          </div>
+          <div class="parallel-box pb-accent">
+            <div class="pb-head">Linear Regression <span style="font-size:9px;opacity:.6">meta-learner</span></div>
+            <div class="pb-cols">Combines base model outputs into final prediction</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pipe-arrow">↓</div>
+
+    <!-- Step 5 -->
+    <div class="pipe-step" style="--delay:.45s">
+      <div class="pipe-num">05</div>
+      <div class="pipe-body">
+        <div class="pipe-title">Inference Output</div>
+        <div class="pipe-desc">Raw stacking prediction is inverse-transformed through PowerTransformer to produce the final estimate in minutes.</div>
+        <div class="pipe-tags">
+          <span class="ptag ptag-accent">time_taken (minutes)</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ PAGE: HISTORY -->
+<div class="page" id="page-history">
+  <div class="page-header">
+    <h2 class="page-title">Prediction History</h2>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+      <span class="hist-count-badge" id="hist-count">0 predictions this session</span>
+      <button class="btn-clear-hist" onclick="clearHistory()">✕ Clear All</button>
+    </div>
+  </div>
+
+  <!-- Empty -->
+  <div class="hist-empty" id="hist-empty">
+    <div class="he-icon">📋</div>
+    <p class="he-title">No predictions yet</p>
+    <p class="he-sub">Head over to the Predict page to get started.</p>
+    <button class="cta-primary" style="margin-top:20px" onclick="showPage('predict')">Go to Predict →</button>
+  </div>
+
+  <!-- Content -->
+  <div id="hist-content" style="display:none">
+    <!-- Stats -->
+    <div class="hstats">
+      <div class="hstat"><div class="hstat-val" id="stat-avg">—</div><div class="hstat-lbl">Avg (min)</div></div>
+      <div class="hstat"><div class="hstat-val" id="stat-min">—</div><div class="hstat-lbl">Min (min)</div></div>
+      <div class="hstat"><div class="hstat-val" id="stat-max">—</div><div class="hstat-lbl">Max (min)</div></div>
+      <div class="hstat"><div class="hstat-val" id="stat-total">—</div><div class="hstat-lbl">Total runs</div></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="hist-chart-wrap">
+      <p class="section-label">Prediction Trend</p>
+      <canvas id="trend-chart" height="100"></canvas>
+    </div>
+
+    <!-- Table -->
+    <div class="hist-table-wrap">
+      <p class="section-label">All Predictions</p>
+      <div class="table-scroll">
+        <table class="hist-table">
+          <thead>
+            <tr><th>#</th><th>Time</th><th>Traffic</th><th>Distance</th><th>Vehicle</th><th>Weather</th><th>City</th><th>Prediction</th></tr>
+          </thead>
+          <tbody id="hist-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
